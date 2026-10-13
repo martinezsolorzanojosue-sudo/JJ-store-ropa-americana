@@ -1,0 +1,563 @@
+<title>JJ Store</title>
+<link id="app-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Yellowtail&family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style id="app-style">
+/* Layout: sticky header with cursive logo, segmented Hombre/Mujer catalog grid of hang-tag cards, side-by-side order form, owner panel behind claude.ai edit rights */
+:root{
+  --bg:#f2f4f7; --surface:#ffffff; --ink:#16243a; --muted:#5d6878; --line:#d9dee6;
+  --denim:#2c4f7c; --denim-soft:#dfe7f2; --red:#c8322b; --on-red:#ffffff;
+  --kraft:#e4cfa6; --kraft-ink:#4a3a1e; --tile:#e6eaf0; --hanger:#8a93a3;
+  --ok:#2f7a4f; --ok-soft:#dcefe3; --qr-bg:#ffffff; --qr-ink:#16243a;
+  --shadow:0 1px 2px rgba(22,36,58,.06),0 6px 18px rgba(22,36,58,.06);
+  --f-logo:"Yellowtail","Brush Script MT",cursive;
+  --f-body:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-tag:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1520; --surface:#171f2d; --ink:#e8edf5; --muted:#9aa6b8; --line:#2a3547;
+  --denim:#8fb3e3; --denim-soft:#1f2c40; --red:#ff6f62; --on-red:#1f0b09;
+  --kraft:#cdb689; --kraft-ink:#33270f; --tile:#1d2737; --hanger:#6b7689;
+  --ok:#62c78d; --ok-soft:#173326; --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0f1520; --surface:#171f2d; --ink:#e8edf5; --muted:#9aa6b8; --line:#2a3547;
+  --denim:#8fb3e3; --denim-soft:#1f2c40; --red:#ff6f62; --on-red:#1f0b09;
+  --kraft:#cdb689; --kraft-ink:#33270f; --tile:#1d2737; --hanger:#6b7689;
+  --ok:#62c78d; --ok-soft:#173326; --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--denim);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.15}
+h2{font-size:1.6rem;font-weight:800;letter-spacing:-.01em}
+h3{font-size:1.05rem;font-weight:700}
+.eyebrow{font-family:var(--f-tag);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+
+/* Header */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:16px;padding-block:8px;flex-wrap:wrap}
+.logo{display:block;width:170px;height:auto;flex:none;cursor:pointer;background:none;border:0;padding:0}
+.logo svg{display:block;width:100%;height:auto}
+nav.tabs{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+nav.tabs button{border:0;background:none;padding:8px 12px;border-radius:999px;font-weight:600;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+nav.tabs button:hover{color:var(--ink);background:var(--denim-soft)}
+nav.tabs button[aria-current="page"]{color:var(--ink);background:var(--denim-soft)}
+.pill{font-family:var(--f-tag);font-size:.7rem;background:var(--red);color:var(--on-red);border-radius:999px;padding:1px 7px;font-weight:600}
+@media (max-width:640px){.logo{width:140px}nav.tabs{margin-left:0;width:100%;justify-content:space-between}nav.tabs button{padding:7px 9px;font-size:.92rem}}
+
+main{padding-block:24px 96px}
+.section-head{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px 24px;margin-bottom:16px}
+
+/* Controls */
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
+.seg button{border:0;background:none;padding:10px 20px;border-radius:9px;font-weight:700;font-size:1rem;cursor:pointer;color:var(--muted);display:flex;gap:8px;align-items:baseline}
+.seg button small{font-family:var(--f-tag);font-weight:500;font-size:.75rem}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:.88rem;cursor:pointer;color:var(--ink)}
+.chip[aria-pressed="true"]{border-color:var(--denim);background:var(--denim-soft);font-weight:600}
+.toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-block:14px 18px}
+.search{flex:1 1 220px;min-width:0;max-width:360px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.check{display:inline-flex;gap:8px;align-items:center;font-size:.9rem;color:var(--muted);cursor:pointer}
+.note{border:1px dashed var(--line);border-radius:10px;padding:10px 14px;font-size:.88rem;color:var(--muted);margin-bottom:16px}
+
+/* Grid of hang-tag cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px}
+@media (max-width:460px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}
+.card{background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;min-width:0}
+.ph{position:relative;aspect-ratio:4/5;max-width:100%;background:var(--tile);color:var(--hanger)}
+.ph img,.ph svg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.ph .sample{position:absolute;left:8px;bottom:8px;font-family:var(--f-tag);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;background:var(--surface);color:var(--muted);padding:2px 6px;border-radius:4px}
+.tag{position:absolute;top:10px;right:10px;background:var(--kraft);color:var(--kraft-ink);font-family:var(--f-tag);font-weight:600;font-size:.95rem;padding:4px 10px 4px 18px;border-radius:3px 6px 6px 3px;clip-path:polygon(9px 0,100% 0,100% 100%,9px 100%,0 50%);font-variant-numeric:tabular-nums}
+.tag::before{content:"";position:absolute;left:7px;top:50%;width:5px;height:5px;margin-top:-2.5px;border-radius:50%;background:var(--tile)}
+.stamp{position:absolute;inset:0;display:grid;place-items:center;background:color-mix(in srgb,var(--surface) 45%,transparent)}
+.stamp span{font-family:var(--f-tag);font-weight:600;letter-spacing:.2em;color:var(--red);border:3px solid var(--red);padding:6px 14px;border-radius:6px;transform:rotate(-14deg);font-size:1.1rem;background:color-mix(in srgb,var(--surface) 70%,transparent)}
+.card.sold .ph img,.card.sold .ph svg{filter:grayscale(.85)}
+.info{padding:12px 12px 14px;display:flex;flex-direction:column;gap:6px;flex:1}
+.info .name{font-weight:700;line-height:1.25;font-size:.97rem}
+.meta{display:flex;gap:6px;flex-wrap:wrap;font-size:.78rem;color:var(--muted)}
+.meta b{font-family:var(--f-tag);font-weight:600;color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:0 5px}
+.info .act{margin-top:auto;padding-top:6px}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:8px 14px;font-weight:600;cursor:pointer;display:inline-flex;justify-content:center;align-items:center;gap:6px;text-decoration:none;font-size:.92rem}
+.btn:hover{border-color:var(--denim)}
+.btn.primary{background:var(--red);border-color:var(--red);color:var(--on-red)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.dark{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.btn.in{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.btn.block{width:100%}
+.btn.sm{padding:5px 9px;font-size:.8rem;border-radius:8px}
+.btn.danger{color:var(--red)}
+.btn.danger.armed{background:var(--red);color:var(--on-red);border-color:var(--red)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.own{display:flex;gap:6px;flex-wrap:wrap;border-top:1px dashed var(--line);padding:8px 12px 10px}
+.empty{padding:40px 16px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px}
+
+/* Forms */
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:24px;align-items:start}
+@media (max-width:820px){.cols{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border-radius:16px;padding:20px;box-shadow:var(--shadow);min-width:0;display:flex;flex-direction:column;gap:14px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label,.lbl{font-size:.82rem;font-weight:600;color:var(--muted)}
+.field input,.field select,.field textarea{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px;width:100%;min-width:0}
+.field textarea{min-height:84px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:460px){.row2{grid-template-columns:1fr}}
+.err{color:var(--red);font-size:.86rem;font-weight:600}
+.line-item{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:12px;align-items:center;padding-block:10px;border-bottom:1px solid var(--line)}
+.line-item .thumb{position:relative;width:56px;height:70px;border-radius:8px;overflow:hidden;background:var(--tile);color:var(--hanger)}
+.line-item .thumb img,.line-item .thumb svg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.price{font-family:var(--f-tag);font-weight:600;font-variant-numeric:tabular-nums}
+.total{display:flex;justify-content:space-between;align-items:baseline;font-size:1.1rem;font-weight:700;padding-top:6px}
+pre.msg{white-space:pre-wrap;word-break:break-word;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;font-family:var(--f-tag);font-size:.82rem;margin:0;max-height:320px;overflow:auto}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+
+/* Share */
+.share{display:grid;grid-template-columns:auto minmax(0,1fr);gap:32px;align-items:center}
+@media (max-width:720px){.share{grid-template-columns:minmax(0,1fr);justify-items:center;text-align:center}}
+.qrcard{background:var(--qr-bg);color:var(--qr-ink);border-radius:18px;padding:22px 22px 16px;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;gap:8px;width:300px;max-width:100%}
+.qrcard .script{font-family:var(--f-logo);font-size:2.4rem;line-height:1}
+.qrcard .cap{font-family:var(--f-tag);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase}
+#qr{width:240px;height:240px;max-width:100%}
+#qr img,#qr canvas{width:100%!important;height:auto!important}
+.link{font-family:var(--f-tag);font-size:.85rem;word-break:break-all;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;user-select:all}
+
+/* Owner */
+.lock{max-width:520px;margin:40px auto;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center}
+.lock svg{width:48px;height:48px;color:var(--muted)}
+.drop{border:2px dashed var(--line);border-radius:12px;display:grid;place-items:center;aspect-ratio:4/5;max-width:220px;width:100%;cursor:pointer;color:var(--muted);text-align:center;padding:12px;position:relative;overflow:hidden;background:var(--bg)}
+.drop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.adm-grid{display:grid;grid-template-columns:220px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:560px){.adm-grid{grid-template-columns:minmax(0,1fr)}.drop{max-width:100%;aspect-ratio:4/3}}
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:96px}
+.stat b{display:block;font-size:1.3rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.78rem;color:var(--muted)}
+.inv{overflow-x:auto}
+.inv table{width:100%;border-collapse:collapse;font-size:.88rem;min-width:560px}
+.inv td,.inv th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+.inv th{font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.st{font-size:.74rem;font-weight:700;border-radius:999px;padding:2px 8px}
+.st.ok{background:var(--ok-soft);color:var(--ok)}
+.st.no{background:color-mix(in srgb,var(--red) 15%,transparent);color:var(--red)}
+.savebar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--ink);color:var(--bg);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px))}
+.savebar .wrap{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap;padding-inline:0}
+.savebar .btn{border-color:transparent}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;z-index:40;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
+footer.foot{border-top:1px solid var(--line);padding-block:20px;color:var(--muted);font-size:.85rem}
+footer.foot .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
+.linkbtn{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;padding:0}
+@media (prefers-reduced-motion:no-preference){.card{transition:transform .15s}.card:hover{transform:translateY(-2px)}}
+</style>
+<div id="app"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script type="application/json" id="jj-state">{"v":1,"settings":{"whatsapp":"","currency":"$","link":"https://claude.ai/artifact/VwSX11XCT5XUiHj973Nkta"},"items":[{"id":"p001","name":"Camiseta Nike vintage","sec":"h","cat":"Camisetas","size":"M","price":180,"cond":"Buen estado","sold":false,"art":{"k":"tee","c":"#2f5d8a"},"img":null,"t":1},{"id":"p002","name":"Camiseta Champion gris","sec":"h","cat":"Camisetas","size":"L","price":160,"cond":"Como nuevo","sold":false,"art":{"k":"tee","c":"#8a8f98"},"img":null,"t":2},{"id":"p003","name":"Camiseta Harley-Davidson","sec":"h","cat":"Camisetas","size":"XL","price":220,"cond":"Con etiqueta","sold":false,"art":{"k":"tee","c":"#1d1f24"},"img":null,"t":3},{"id":"p004","name":"Camiseta Gap básica","sec":"h","cat":"Camisetas","size":"S","price":120,"cond":"Buen estado","sold":false,"art":{"k":"tee","c":"#c8322b"},"img":null,"t":4},{"id":"p005","name":"Camiseta Hanes blanca","sec":"h","cat":"Camisetas","size":"M","price":100,"cond":"Como nuevo","sold":false,"art":{"k":"tee","c":"#eef0f2"},"img":null,"t":5},{"id":"p006","name":"Camisa Ralph Lauren Oxford","sec":"h","cat":"Camisas","size":"L","price":320,"cond":"Buen estado","sold":false,"art":{"k":"shirt","c":"#9bb7d4"},"img":null,"t":6},{"id":"p007","name":"Camisa Tommy Hilfiger a cuadros","sec":"h","cat":"Camisas","size":"M","price":300,"cond":"Como nuevo","sold":false,"art":{"k":"shirt","c":"#b8463d"},"img":null,"t":7},{"id":"p008","name":"Camisa Columbia de pesca","sec":"h","cat":"Camisas","size":"XL","price":280,"cond":"Con etiqueta","sold":false,"art":{"k":"shirt","c":"#c9b48a"},"img":null,"t":8},{"id":"p009","name":"Camisa Levi's de mezclilla","sec":"h","cat":"Camisas","size":"M","price":350,"cond":"Buen estado","sold":false,"art":{"k":"shirt","c":"#4a6c94"},"img":null,"t":9},{"id":"p010","name":"Camisa Dockers manga larga","sec":"h","cat":"Camisas","size":"L","price":240,"cond":"Como nuevo","sold":false,"art":{"k":"shirt","c":"#e3e6ea"},"img":null,"t":10},{"id":"p011","name":"Sudadera Champion con capucha","sec":"h","cat":"Sudaderas","size":"L","price":380,"cond":"Buen estado","sold":true,"art":{"k":"hoodie","c":"#3b4f7a"},"img":null,"t":11},{"id":"p012","name":"Sudadera Nike Club","sec":"h","cat":"Sudaderas","size":"M","price":400,"cond":"Como nuevo","sold":false,"art":{"k":"hoodie","c":"#2b2d33"},"img":null,"t":12},{"id":"p013","name":"Sudadera universitaria Michigan","sec":"h","cat":"Sudaderas","size":"XL","price":420,"cond":"Con etiqueta","sold":false,"art":{"k":"hoodie","c":"#1f3a5f"},"img":null,"t":13},{"id":"p014","name":"Sudadera Carhartt","sec":"h","cat":"Sudaderas","size":"L","price":450,"cond":"Buen estado","sold":false,"art":{"k":"hoodie","c":"#8a6a3b"},"img":null,"t":14},{"id":"p015","name":"Chaqueta Carhartt Detroit","sec":"h","cat":"Chaquetas","size":"L","price":750,"cond":"Como nuevo","sold":false,"art":{"k":"jacket","c":"#9b7440"},"img":null,"t":15},{"id":"p016","name":"Chaqueta Levi's Trucker","sec":"h","cat":"Chaquetas","size":"M","price":680,"cond":"Buen estado","sold":false,"art":{"k":"jacket","c":"#46658f"},"img":null,"t":16},{"id":"p017","name":"Chaqueta The North Face","sec":"h","cat":"Chaquetas","size":"XL","price":900,"cond":"Como nuevo","sold":false,"art":{"k":"jacket","c":"#262a30"},"img":null,"t":17},{"id":"p018","name":"Chaqueta bomber Alpha","sec":"h","cat":"Chaquetas","size":"M","price":620,"cond":"Con etiqueta","sold":false,"art":{"k":"jacket","c":"#4d5a3c"},"img":null,"t":18},{"id":"p019","name":"Jeans Levi's 501","sec":"h","cat":"Pantalones","size":"32x32","price":450,"cond":"Buen estado","sold":false,"art":{"k":"jeans","c":"#3d5f8c"},"img":null,"t":19},{"id":"p020","name":"Jeans Wrangler Cowboy Cut","sec":"h","cat":"Pantalones","size":"34x30","price":400,"cond":"Como nuevo","sold":false,"art":{"k":"jeans","c":"#2f4b73"},"img":null,"t":20},{"id":"p021","name":"Pantalón Dickies 874","sec":"h","cat":"Pantalones","size":"32x30","price":380,"cond":"Buen estado","sold":false,"art":{"k":"jeans","c":"#5b5d4a"},"img":null,"t":21},{"id":"p022","name":"Pantalón cargo Old Navy","sec":"h","cat":"Pantalones","size":"30x32","price":340,"cond":"Como nuevo","sold":true,"art":{"k":"jeans","c":"#7a6f55"},"img":null,"t":22},{"id":"p023","name":"Short Nike deportivo","sec":"h","cat":"Shorts","size":"M","price":180,"cond":"Con etiqueta","sold":false,"art":{"k":"shorts","c":"#2b2d33"},"img":null,"t":23},{"id":"p024","name":"Short Levi's de mezclilla","sec":"h","cat":"Shorts","size":"32","price":220,"cond":"Buen estado","sold":false,"art":{"k":"shorts","c":"#5a7aa3"},"img":null,"t":24},{"id":"p025","name":"Short cargo Columbia","sec":"h","cat":"Shorts","size":"34","price":200,"cond":"Como nuevo","sold":false,"art":{"k":"shorts","c":"#b5a37d"},"img":null,"t":25},{"id":"p026","name":"Suéter Polo de algodón","sec":"h","cat":"Suéteres","size":"L","price":360,"cond":"Buen estado","sold":false,"art":{"k":"sweater","c":"#2e5b46"},"img":null,"t":26},{"id":"p027","name":"Blusa Ann Taylor de seda","sec":"m","cat":"Blusas","size":"S","price":220,"cond":"Como nuevo","sold":false,"art":{"k":"blouse","c":"#e8c7c8"},"img":null,"t":27},{"id":"p028","name":"Blusa Old Navy floral","sec":"m","cat":"Blusas","size":"M","price":160,"cond":"Con etiqueta","sold":false,"art":{"k":"blouse","c":"#d98f6f"},"img":null,"t":28},{"id":"p029","name":"Blusa Loft blanca","sec":"m","cat":"Blusas","size":"M","price":180,"cond":"Buen estado","sold":false,"art":{"k":"blouse","c":"#f1f1ee"},"img":null,"t":29},{"id":"p030","name":"Blusa Calvin Klein negra","sec":"m","cat":"Blusas","size":"L","price":240,"cond":"Como nuevo","sold":false,"art":{"k":"blouse","c":"#22242a"},"img":null,"t":30},{"id":"p031","name":"Blusa American Eagle rayas","sec":"m","cat":"Blusas","size":"S","price":170,"cond":"Buen estado","sold":false,"art":{"k":"blouse","c":"#7c9cc4"},"img":null,"t":31},{"id":"p032","name":"Camiseta Gap rosa","sec":"m","cat":"Camisetas","size":"S","price":110,"cond":"Como nuevo","sold":false,"art":{"k":"tee","c":"#e79bb0"},"img":null,"t":32},{"id":"p033","name":"Camiseta Disney vintage","sec":"m","cat":"Camisetas","size":"M","price":200,"cond":"Con etiqueta","sold":true,"art":{"k":"tee","c":"#c8322b"},"img":null,"t":33},{"id":"p034","name":"Camiseta Nike Dri-FIT","sec":"m","cat":"Camisetas","size":"M","price":170,"cond":"Buen estado","sold":false,"art":{"k":"tee","c":"#6b4f9a"},"img":null,"t":34},{"id":"p035","name":"Vestido Forever 21 de verano","sec":"m","cat":"Vestidos","size":"S","price":280,"cond":"Como nuevo","sold":false,"art":{"k":"dress","c":"#f0b45a"},"img":null,"t":35},{"id":"p036","name":"Vestido Michael Kors negro","sec":"m","cat":"Vestidos","size":"M","price":450,"cond":"Buen estado","sold":false,"art":{"k":"dress","c":"#1d1f24"},"img":null,"t":36},{"id":"p037","name":"Vestido floral Old Navy","sec":"m","cat":"Vestidos","size":"M","price":300,"cond":"Como nuevo","sold":false,"art":{"k":"dress","c":"#c96f8a"},"img":null,"t":37},{"id":"p038","name":"Vestido de mezclilla Levi's","sec":"m","cat":"Vestidos","size":"L","price":380,"cond":"Con etiqueta","sold":false,"art":{"k":"dress","c":"#4a6c94"},"img":null,"t":38},{"id":"p039","name":"Vestido Banana Republic","sec":"m","cat":"Vestidos","size":"S","price":420,"cond":"Buen estado","sold":false,"art":{"k":"dress","c":"#2e5b46"},"img":null,"t":39},{"id":"p040","name":"Falda plisada J.Crew","sec":"m","cat":"Faldas","size":"S","price":240,"cond":"Como nuevo","sold":false,"art":{"k":"skirt","c":"#c9b48a"},"img":null,"t":40},{"id":"p041","name":"Falda de mezclilla Gap","sec":"m","cat":"Faldas","size":"M","price":220,"cond":"Buen estado","sold":false,"art":{"k":"skirt","c":"#5a7aa3"},"img":null,"t":41},{"id":"p042","name":"Falda midi Ann Taylor","sec":"m","cat":"Faldas","size":"M","price":260,"cond":"Como nuevo","sold":false,"art":{"k":"skirt","c":"#8f2f3a"},"img":null,"t":42},{"id":"p043","name":"Jeans Levi's Mom Fit","sec":"m","cat":"Pantalones","size":"28","price":450,"cond":"Con etiqueta","sold":false,"art":{"k":"jeans","c":"#6f8fb8"},"img":null,"t":43},{"id":"p044","name":"Jeans American Eagle skinny","sec":"m","cat":"Pantalones","size":"30","price":400,"cond":"Buen estado","sold":true,"art":{"k":"jeans","c":"#2f4b73"},"img":null,"t":44},{"id":"p045","name":"Pantalón Gap de vestir","sec":"m","cat":"Pantalones","size":"8","price":320,"cond":"Como nuevo","sold":false,"art":{"k":"jeans","c":"#3a3d45"},"img":null,"t":45},{"id":"p046","name":"Short Levi's high rise","sec":"m","cat":"Shorts","size":"27","price":220,"cond":"Buen estado","sold":false,"art":{"k":"shorts","c":"#86a5cb"},"img":null,"t":46},{"id":"p047","name":"Short Nike running","sec":"m","cat":"Shorts","size":"S","price":160,"cond":"Como nuevo","sold":false,"art":{"k":"shorts","c":"#e2557a"},"img":null,"t":47},{"id":"p048","name":"Sudadera Champion crop","sec":"m","cat":"Sudaderas","size":"S","price":340,"cond":"Con etiqueta","sold":false,"art":{"k":"hoodie","c":"#b9a6d6"},"img":null,"t":48},{"id":"p049","name":"Sudadera Victoria's Secret PINK","sec":"m","cat":"Sudaderas","size":"M","price":380,"cond":"Buen estado","sold":false,"art":{"k":"hoodie","c":"#ec9bb5"},"img":null,"t":49},{"id":"p050","name":"Chaqueta Levi's de mezclilla","sec":"m","cat":"Chaquetas","size":"S","price":620,"cond":"Como nuevo","sold":false,"art":{"k":"jacket","c":"#5a7aa3"},"img":null,"t":50},{"id":"p051","name":"Chaqueta Columbia impermeable","sec":"m","cat":"Chaquetas","size":"M","price":700,"cond":"Buen estado","sold":false,"art":{"k":"jacket","c":"#2f6f78"},"img":null,"t":51},{"id":"p052","name":"Cárdigan Gap tejido","sec":"m","cat":"Suéteres","size":"M","price":300,"cond":"Como nuevo","sold":false,"art":{"k":"sweater","c":"#d8c3a5"},"img":null,"t":52}]}</script>
+<script id="app-js">
+(function(){
+"use strict";
+var SC = "scr" + "ipt";
+var RESET = ":root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,sans-serif}img{max-width:100%}[hidden]{display:none!important}";
+var STORE = JSON.parse(document.getElementById("jj-state").textContent || "{}");
+if (!STORE.items) STORE.items = [];
+if (!STORE.settings) STORE.settings = { whatsapp: "", currency: "$", link: "" };
+var S = JSON.parse(JSON.stringify(STORE));
+var dirty = 0, isOwner = false, art = null, assets = null, dl = null;
+var tempUrls = {}, pendingDel = [];
+var LS = {
+  get: function(k, d){ try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch(e){ return d; } },
+  set: function(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+};
+var SS = {
+  get: function(k, d){ try { var v = sessionStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch(e){ return d; } },
+  set: function(k, v){ try { sessionStorage.setItem(k, JSON.stringify(v)); } catch(e){} },
+  del: function(k){ try { sessionStorage.removeItem(k); } catch(e){} }
+};
+var ui = { tab: LS.get("jj.tab", "catalogo"), sec: LS.get("jj.sec", "h"), cat: "Todas", q: "", hideSold: LS.get("jj.hide", false) };
+var cart = LS.get("jj.cart", []);
+var draft = LS.get("jj.draft", { name: "", phone: "", ship: "Recoger en tienda", addr: "", wish: "", notes: "" });
+var adm = { editing: null, blob: null, preview: null, name: "", sec: "h", cat: "", size: "", price: "", cond: "Buen estado", err: "" };
+var orderMsg = null, orderErr = "";
+var armed = null;
+
+var h = (location.hash || "").slice(1);
+if (h === "hombre" || h === "mujer"){ ui.tab = "catalogo"; ui.sec = h === "hombre" ? "h" : "m"; }
+else if (h === "pedido" || h === "compartir" || h === "catalogo") ui.tab = h;
+
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]; }); }
+function money(n){ var c = S.settings.currency || "$"; return c + (c.length > 1 ? " " : "") + Number(n || 0).toLocaleString("es", { maximumFractionDigits: 2 }); }
+function byId(id){ for (var i = 0; i < S.items.length; i++) if (S.items[i].id === id) return S.items[i]; return null; }
+function secName(s){ return s === "h" ? "Hombre" : "Mujer"; }
+
+/* ---------- Garment illustrations for sample items ---------- */
+var D = 'fill="none" stroke="rgba(0,0,0,.28)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+var LONG = "M64 40 L86 30 Q100 44 114 30 L136 40 L160 64 L176 182 L156 186 L140 98 L140 198 L60 198 L60 98 L44 186 L24 182 L40 64 Z";
+var SHAPES = {
+  tee: { p: "M64 38 L86 28 Q100 44 114 28 L136 38 L168 70 L150 90 L138 78 L138 196 L62 196 L62 78 L50 90 L32 70 Z", d: '<path d="M86 28 Q100 50 114 28" ' + D + '/>', hang: 1 },
+  blouse: { p: "M66 40 L88 30 Q100 50 112 30 L134 40 L160 66 L146 84 L134 74 L142 196 L58 196 L66 74 L54 84 L40 66 Z", d: '<path d="M88 30 L100 56 L112 30" ' + D + '/><path d="M58 172 Q100 186 142 172" ' + D + '/>', hang: 1 },
+  shirt: { p: LONG, d: '<path d="M86 30 L98 52 L100 44 L102 52 L114 30" ' + D + '/><path d="M100 52 L100 198" ' + D + '/><g fill="rgba(0,0,0,.3)"><circle cx="104" cy="72" r="2.2"/><circle cx="104" cy="98" r="2.2"/><circle cx="104" cy="124" r="2.2"/><circle cx="104" cy="150" r="2.2"/><circle cx="104" cy="176" r="2.2"/></g><rect x="112" y="68" width="18" height="18" rx="2" ' + D + '/>', hang: 1 },
+  hoodie: { p: LONG, d: '<path d="M80 36 Q100 4 120 36 Q100 56 80 36 Z" fill="rgba(0,0,0,.12)" stroke="rgba(0,0,0,.28)" stroke-width="2"/><path d="M95 50 L93 80 M105 50 L107 80" ' + D + '/><path d="M74 148 L126 148 L134 182 L66 182 Z" ' + D + '/><path d="M60 188 L140 188" ' + D + '/>', hang: 0 },
+  jacket: { p: LONG, d: '<path d="M86 30 L94 66 L100 44 L106 66 L114 30" ' + D + '/><path d="M100 60 L100 198" stroke="rgba(0,0,0,.4)" stroke-width="2.5"/><rect x="70" y="120" width="20" height="16" rx="2" ' + D + '/><rect x="110" y="120" width="20" height="16" rx="2" ' + D + '/><path d="M44 176 L24 172 M156 176 L176 172" ' + D + '/>', hang: 1 },
+  sweater: { p: LONG, d: '<path d="M88 32 L100 52 L112 32" ' + D + '/><path d="M66 186 V198 M76 186 V198 M86 186 V198 M96 186 V198 M106 186 V198 M116 186 V198 M126 186 V198 M134 186 V198" ' + D + '/><path d="M60 186 L140 186" ' + D + '/>', hang: 1 },
+  jeans: { p: "M64 24 L136 24 L146 206 L110 206 L100 84 L90 206 L54 206 Z", d: '<path d="M64 36 L136 36" ' + D + '/><path d="M100 36 L100 76" ' + D + '/><path d="M68 42 Q78 60 92 42 M108 42 Q122 60 132 42" ' + D + '/>', hang: 0 },
+  shorts: { p: "M62 50 L138 50 L150 150 L108 150 L100 104 L92 150 L50 150 Z", d: '<path d="M62 62 L138 62" ' + D + '/><path d="M100 62 L100 94" ' + D + '/><path d="M66 68 Q76 84 90 68 M110 68 Q124 84 134 68" ' + D + '/>', hang: 0 },
+  dress: { p: "M82 26 L92 26 Q100 40 108 26 L118 26 L124 62 L116 96 L152 204 L48 204 L84 96 L76 62 Z", d: '<path d="M84 96 L116 96" ' + D + '/><path d="M92 120 L80 204 M108 120 L120 204" ' + D + '/>', hang: 1 },
+  skirt: { p: "M70 50 L130 50 L160 190 L40 190 Z", d: '<path d="M70 62 L130 62" ' + D + '/><path d="M86 62 L72 190 M100 62 L100 190 M114 62 L128 190" ' + D + '/>', hang: 0 }
+};
+function artSvg(a){
+  var s = SHAPES[a.k] || SHAPES.tee;
+  var hanger = s.hang ? '<path d="M94 16 Q94 8 100 8 Q106 8 106 14 Q106 19 100 21 L100 28" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>' : '<path d="M60 18 L140 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M70 18 L70 26 M130 18 L130 26" stroke="currentColor" stroke-width="2"/>';
+  return '<svg viewBox="-10 -6 220 236" preserveAspectRatio="xMidYMid meet" aria-hidden="true">' + hanger + '<path d="' + s.p + '" fill="' + esc(a.c) + '" stroke="rgba(0,0,0,.3)" stroke-width="2" stroke-linejoin="round"/>' + s.d + '</svg>';
+}
+function media(it, small){
+  if (it.img){ var src = tempUrls[it.img] || ("/_blob/" + it.img); return '<img src="' + esc(src) + '" alt="' + esc(it.name) + '" loading="lazy">'; }
+  return artSvg(it.art || { k: "tee", c: "#8a8f98" }) + (small ? "" : '<span class="sample">Muestra</span>');
+}
+
+var LOGO = '<svg viewBox="0 0 320 130" role="img" aria-label="JJ Store, ropa americana">' +
+  '<g transform="translate(78 64) rotate(-14)" opacity=".9"><path d="M-34 -40 L-16 -48 Q0 -34 16 -48 L34 -40 L60 -14 L44 2 L34 -8 L34 52 L-34 52 L-34 -8 L-44 2 L-60 -14 Z" fill="var(--denim-soft)" stroke="var(--denim)" stroke-width="2.5" stroke-linejoin="round"/></g>' +
+  '<g transform="translate(244 62) rotate(12)" opacity=".9"><path d="M-16 -50 L-8 -50 Q0 -38 8 -50 L16 -50 L22 -20 L14 6 L44 54 L-44 54 L-14 6 L-22 -20 Z" fill="color-mix(in srgb,var(--red) 18%,var(--surface))" stroke="var(--red)" stroke-width="2.5" stroke-linejoin="round"/></g>' +
+  '<text x="160" y="80" text-anchor="middle" font-family="Yellowtail, Brush Script MT, cursive" font-size="72" fill="var(--ink)" stroke="var(--bg)" stroke-width="8" paint-order="stroke" stroke-linejoin="round">JJ Store</text>' +
+  '<text x="160" y="114" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12.5" letter-spacing="4.5" fill="var(--muted)" font-weight="600">ROPA AMERICANA</text></svg>';
+
+/* ---------- Render ---------- */
+var app = document.getElementById("app");
+function render(){
+  var inCart = cartItems().length;
+  var tabs = [["catalogo","Catálogo"],["pedido","Hacer pedido"],["compartir","Compartir"]];
+  if (isOwner) tabs.push(["dueno","Dueño"]);
+  var nav = tabs.map(function(t){
+    return '<button data-act="tab" data-v="' + t[0] + '"' + (ui.tab === t[0] ? ' aria-current="page"' : "") + ">" + t[1] + (t[0] === "pedido" && inCart ? ' <span class="pill">' + inCart + "</span>" : "") + "</button>";
+  }).join("");
+  var body = ui.tab === "pedido" ? vPedido() : ui.tab === "compartir" ? vShare() : ui.tab === "dueno" ? vOwner() : vCatalog();
+  app.innerHTML =
+    '<header class="top"><div class="wrap"><button class="logo" data-act="tab" data-v="catalogo" aria-label="Ir al catálogo">' + LOGO + '</button><nav class="tabs">' + nav + "</nav></div></header>" +
+    '<main><div class="wrap">' + body + "</div></main>" +
+    '<footer class="foot"><div class="wrap"><span>JJ Store · Ropa americana de paca, seleccionada pieza por pieza.</span>' +
+    (isOwner ? "" : '<button class="linkbtn" data-act="tab" data-v="dueno">Acceso del dueño</button>') + "</div></footer>" +
+    (dirty && isOwner ? '<div class="savebar"><div class="wrap"><span><b>' + dirty + "</b> " + (dirty === 1 ? "cambio sin guardar" : "cambios sin guardar") + ' · los clientes aún no lo ven</span><span class="actions"><button class="btn sm" data-act="discard">Descartar</button><button class="btn primary" data-act="save">Guardar y publicar</button></span></div></div>' : "") +
+    (toastMsg ? '<div class="toast" role="status">' + esc(toastMsg) + "</div>" : "");
+  if (ui.tab === "catalogo") renderGrid();
+  if (ui.tab === "compartir") drawQr();
+}
+var ownerChecked = false;
+
+function secItems(sec){ return S.items.filter(function(i){ return i.sec === sec; }); }
+function vCatalog(){
+  var hs = secItems("h"), ms = secItems("m");
+  var list = ui.sec === "h" ? hs : ms;
+  var cats = ["Todas"]; list.forEach(function(i){ if (cats.indexOf(i.cat) < 0) cats.push(i.cat); });
+  if (cats.indexOf(ui.cat) < 0) ui.cat = "Todas";
+  var avail = function(a){ return a.filter(function(i){ return !i.sold; }).length; };
+  var samples = S.items.some(function(i){ return !i.img; });
+  return '<div class="section-head"><div><div class="eyebrow">Catálogo · ' + S.items.length + " prendas · " + avail(S.items) + ' disponibles</div><h2>Escoge tu prenda</h2></div>' +
+    '<div class="seg" role="group" aria-label="Sección">' +
+    '<button data-act="sec" data-v="h" aria-pressed="' + (ui.sec === "h") + '">Hombre <small>' + avail(hs) + "</small></button>" +
+    '<button data-act="sec" data-v="m" aria-pressed="' + (ui.sec === "m") + '">Mujer <small>' + avail(ms) + "</small></button></div></div>" +
+    '<div class="chips" role="group" aria-label="Categoría">' + cats.map(function(c){ return '<button class="chip" data-act="cat" data-v="' + esc(c) + '" aria-pressed="' + (ui.cat === c) + '">' + esc(c) + "</button>"; }).join("") + "</div>" +
+    '<div class="toolbar"><input class="search" id="q" type="search" placeholder="Buscar marca, prenda o talla" value="' + esc(ui.q) + '" aria-label="Buscar">' +
+    '<label class="check"><input type="checkbox" id="hideSold"' + (ui.hideSold ? " checked" : "") + "> Ocultar vendidas</label></div>" +
+    (samples ? '<div class="note">Las prendas marcadas como <b>Muestra</b> son de ejemplo. ' + (isOwner ? "Reemplázalas con tus fotos desde la pestaña Dueño." : "Pronto verás aquí las fotos reales.") + "</div>" : "") +
+    '<div class="grid" id="grid"></div>';
+}
+function renderGrid(){
+  var g = document.getElementById("grid"); if (!g) return;
+  var q = ui.q.trim().toLowerCase();
+  var list = S.items.filter(function(i){
+    return i.sec === ui.sec && (ui.cat === "Todas" || i.cat === ui.cat) && !(ui.hideSold && i.sold) &&
+      (!q || (i.name + " " + i.cat + " " + i.size + " " + i.cond).toLowerCase().indexOf(q) >= 0);
+  }).sort(function(a, b){ return (a.sold - b.sold) || (b.t - a.t); });
+  if (!list.length){ g.innerHTML = '<div class="empty" style="grid-column:1/-1">No hay prendas que coincidan. Prueba otra categoría o búsqueda.</div>'; return; }
+  g.innerHTML = list.map(card).join("");
+}
+function card(it){
+  var inC = cart.indexOf(it.id) >= 0;
+  var act = it.sold ? '<button class="btn block" disabled>Vendida</button>' :
+    inC ? '<button class="btn in block" data-act="cart" data-id="' + it.id + '">En tu pedido ✓</button>' :
+    '<button class="btn primary block" data-act="cart" data-id="' + it.id + '">Lo quiero</button>';
+  var own = isOwner ? '<div class="own"><button class="btn sm" data-act="sold" data-id="' + it.id + '">' + (it.sold ? "Marcar disponible" : "Marcar vendida") + '</button><button class="btn sm" data-act="edit" data-id="' + it.id + '">Editar</button>' + delBtn(it.id) + "</div>" : "";
+  return '<article class="card' + (it.sold ? " sold" : "") + '"><div class="ph">' + media(it) + '<span class="tag">' + money(it.price) + "</span>" + (it.sold ? '<div class="stamp"><span>VENDIDO</span></div>' : "") + "</div>" +
+    '<div class="info"><div class="name">' + esc(it.name) + '</div><div class="meta"><b>Talla ' + esc(it.size) + "</b><span>" + esc(it.cond) + "</span><span>· " + esc(it.cat) + '</span></div><div class="act">' + act + "</div></div>" + own + "</article>";
+}
+function delBtn(id){
+  var on = armed === "del:" + id;
+  return '<button class="btn sm danger' + (on ? " armed" : "") + '" data-act="del" data-id="' + id + '">' + (on ? "¿Eliminar? Toca otra vez" : "Eliminar") + "</button>";
+}
+
+function cartItems(){ return cart.map(byId).filter(Boolean); }
+function vPedido(){
+  var items = cartItems();
+  var avail = items.filter(function(i){ return !i.sold; });
+  var total = avail.reduce(function(s, i){ return s + Number(i.price || 0); }, 0);
+  var left = '<section class="panel"><div><div class="eyebrow">Paso 1</div><h3>Tu pedido</h3></div>' +
+    (items.length ? items.map(function(i){
+      return '<div class="line-item"><div class="thumb">' + media(i, true) + '</div><div style="min-width:0"><div style="font-weight:600">' + esc(i.name) + '</div><div class="muted" style="font-size:.82rem">' + secName(i.sec) + " · Talla " + esc(i.size) + (i.sold ? ' · <span class="err">Ya se vendió</span>' : "") + '</div></div><div style="text-align:right"><div class="price">' + money(i.price) + '</div><button class="linkbtn" data-act="cart" data-id="' + i.id + '">Quitar</button></div></div>';
+    }).join("") + '<div class="total"><span>Total</span><span class="price">' + money(total) + "</span></div>"
+    : '<p class="muted" style="margin:0">Aún no agregas prendas. Ve al catálogo y toca <b>Lo quiero</b> en las que te gusten, o encarga abajo lo que buscas.</p><div><button class="btn" data-act="tab" data-v="catalogo">Ver catálogo</button></div>') +
+    "</section>";
+  var f = draft;
+  var right = '<section class="panel"><div><div class="eyebrow">Paso 2</div><h3>Tus datos</h3></div>' +
+    '<div class="row2"><div class="field"><label for="o-name">Nombre</label><input id="o-name" data-d="name" value="' + esc(f.name) + '" autocomplete="name"></div>' +
+    '<div class="field"><label for="o-phone">Teléfono / WhatsApp</label><input id="o-phone" data-d="phone" type="tel" value="' + esc(f.phone) + '" autocomplete="tel"></div></div>' +
+    '<div class="row2"><div class="field"><label for="o-ship">Entrega</label><select id="o-ship" data-d="ship">' + ["Recoger en tienda","Envío a domicilio"].map(function(o){ return "<option" + (f.ship === o ? " selected" : "") + ">" + o + "</option>"; }).join("") + "</select></div>" +
+    '<div class="field"><label for="o-addr">Dirección (si es envío)</label><input id="o-addr" data-d="addr" value="' + esc(f.addr) + '" autocomplete="street-address"></div></div>' +
+    '<div class="field"><label for="o-wish">¿Buscas algo que no está? Encárgalo</label><textarea id="o-wish" data-d="wish" placeholder="Ej.: chaqueta Carhartt talla L, color café">' + esc(f.wish) + "</textarea></div>" +
+    '<div class="field"><label for="o-notes">Notas</label><input id="o-notes" data-d="notes" value="' + esc(f.notes) + '" placeholder="Horario, forma de pago…"></div>' +
+    (orderErr ? '<div class="err">' + esc(orderErr) + "</div>" : "") +
+    '<button class="btn primary" data-act="order">Preparar pedido</button>' +
+    (orderMsg ? '<div class="field"><span class="lbl">Tu pedido listo para enviar</span><pre class="msg" id="msg">' + esc(orderMsg) + '</pre></div><div class="actions">' +
+      (waNumber() ? '<a class="btn dark" target="_blank" rel="noopener" href="https://wa.me/' + waNumber() + "?text=" + encodeURIComponent(orderMsg) + '">Enviar por WhatsApp</a>' : "") +
+      '<button class="btn" data-act="copymsg">Copiar pedido</button></div>' +
+      (waNumber() ? '<p class="muted" style="margin:0;font-size:.85rem">Se abre WhatsApp con el mensaje escrito; tú lo envías. Número de JJ Store: <b>+' + waNumber() + "</b></p>" : '<p class="muted" style="margin:0;font-size:.85rem">Copia el mensaje y envíalo a JJ Store por WhatsApp o Messenger.</p>')
+    : "") + "</section>";
+  return '<div class="section-head"><div><div class="eyebrow">Pedidos y encargos</div><h2>Hacer un pedido</h2></div></div><div class="cols">' + left + right + "</div>";
+}
+function waNumber(){ return String(S.settings.whatsapp || "").replace(/\D/g, ""); }
+function buildOrder(){
+  var items = cartItems().filter(function(i){ return !i.sold; });
+  var f = draft;
+  if (!f.name.trim() || !f.phone.trim()) return { err: "Escribe tu nombre y tu teléfono para que JJ Store te conteste." };
+  if (!items.length && !f.wish.trim()) return { err: "Agrega al menos una prenda del catálogo o escribe lo que quieres encargar." };
+  var lines = ["Hola JJ Store, quiero hacer un pedido:"];
+  if (items.length){
+    lines.push("");
+    items.forEach(function(i){ lines.push("• " + i.name + " (" + secName(i.sec) + ", talla " + i.size + ") — " + money(i.price) + " [" + i.id + "]"); });
+    lines.push("Total: " + money(items.reduce(function(s, i){ return s + Number(i.price || 0); }, 0)));
+  }
+  if (f.wish.trim()){ lines.push(""); lines.push("Encargo: " + f.wish.trim()); }
+  lines.push(""); lines.push("Nombre: " + f.name.trim()); lines.push("Teléfono: " + f.phone.trim()); lines.push("Entrega: " + f.ship + (f.ship === "Envío a domicilio" && f.addr.trim() ? " — " + f.addr.trim() : ""));
+  if (f.notes.trim()) lines.push("Notas: " + f.notes.trim());
+  return { msg: lines.join("\n") };
+}
+
+function vShare(){
+  var link = S.settings.link;
+  return '<div class="section-head"><div><div class="eyebrow">Compartir</div><h2>Comparte JJ Store con un código QR</h2></div></div>' +
+    '<div class="share"><div class="qrcard"><div class="script">JJ Store</div><div id="qr" aria-label="Código QR de la tienda"></div><div class="cap">Escanea y mira el catálogo</div></div>' +
+    '<div style="display:flex;flex-direction:column;gap:14px;min-width:0;max-width:520px">' +
+    (link ? '<p style="margin:0">Imprime este código y pégalo en tu local, tus bolsas o tus estados. Al escanearlo, tus clientes abren el catálogo en su teléfono.</p><div class="link" id="link">' + esc(link) + '</div><div class="actions"><button class="btn dark" data-act="copylink">Copiar enlace</button>' + (dl ? '<button class="btn" data-act="saveqr">Descargar QR</button>' : "") + "</div>" +
+      '<p class="muted" style="margin:0;font-size:.85rem">Si el QR no se descarga, toma una captura de pantalla del recuadro.</p>'
+    : '<p class="muted" style="margin:0">El enlace de la tienda aún no está configurado. ' + (isOwner ? "Agrégalo en la pestaña Dueño → Ajustes." : "") + "</p>") +
+    "</div></div>";
+}
+function drawQr(){
+  var el = document.getElementById("qr"); if (!el || !S.settings.link) return;
+  if (typeof QRCode === "undefined"){ el.innerHTML = '<p class="muted">No se pudo cargar el generador de QR.</p>'; return; }
+  el.innerHTML = "";
+  new QRCode(el, { text: S.settings.link, width: 480, height: 480, colorDark: "#16243a", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M });
+}
+
+function vOwner(){
+  if (!isOwner){
+    return '<div class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><h2>Solo para el dueño</h2><p class="muted" style="margin:0">El panel de JJ Store se abre solo con la cuenta del dueño. Si eres el dueño, entra con tu cuenta de Claude y vuelve a abrir esta página.</p>' +
+      (ownerChecked ? "" : '<p class="muted" style="margin:0">Verificando acceso…</p>') + '<button class="btn" data-act="tab" data-v="catalogo">Volver al catálogo</button></div>';
+  }
+  var a = adm, it = a.editing ? byId(a.editing) : null;
+  var cats = []; S.items.forEach(function(i){ if (cats.indexOf(i.cat) < 0) cats.push(i.cat); });
+  var prev = a.preview || (it && it.img ? (tempUrls[it.img] || "/_blob/" + it.img) : null);
+  var tot = S.items.length, sold = S.items.filter(function(i){ return i.sold; }).length, samp = S.items.filter(function(i){ return !i.img; }).length;
+  var form = '<section class="panel"><div><div class="eyebrow">' + (it ? "Editando " + esc(it.id) : "Nueva prenda") + "</div><h3>" + (it ? "Editar prenda" : "Subir prenda") + "</h3></div>" +
+    '<div class="adm-grid"><label class="drop" for="a-file">' + (prev ? '<img src="' + esc(prev) + '" alt="Foto de la prenda">' : "<span>Toca para elegir o tomar una foto</span>") + '</label><input id="a-file" type="file" accept="image/*" hidden>' +
+    '<div style="display:flex;flex-direction:column;gap:12px;min-width:0">' +
+    '<div class="field"><label for="a-name">Nombre de la prenda</label><input id="a-name" data-a="name" value="' + esc(a.name) + '" placeholder="Ej.: Chaqueta Levi\'s de mezclilla"></div>' +
+    '<div class="row2"><div class="field"><label for="a-sec">Sección</label><select id="a-sec" data-a="sec"><option value="h"' + (a.sec === "h" ? " selected" : "") + '>Hombre</option><option value="m"' + (a.sec === "m" ? " selected" : "") + ">Mujer</option></select></div>" +
+    '<div class="field"><label for="a-cat">Categoría</label><input id="a-cat" data-a="cat" list="cats" value="' + esc(a.cat) + '" placeholder="Camisas, Vestidos…"><datalist id="cats">' + cats.map(function(c){ return '<option value="' + esc(c) + '">'; }).join("") + "</datalist></div></div>" +
+    '<div class="row2"><div class="field"><label for="a-size">Talla</label><input id="a-size" data-a="size" value="' + esc(a.size) + '" placeholder="M, 32x30…"></div>' +
+    '<div class="field"><label for="a-price">Precio (' + esc(S.settings.currency || "$") + ')</label><input id="a-price" data-a="price" type="number" min="0" step="1" inputmode="decimal" value="' + esc(a.price) + '"></div></div>' +
+    '<div class="field"><label for="a-cond">Estado</label><select id="a-cond" data-a="cond">' + ["Con etiqueta","Como nuevo","Buen estado","Detalle leve"].map(function(o){ return "<option" + (a.cond === o ? " selected" : "") + ">" + o + "</option>"; }).join("") + "</select></div>" +
+    (a.err ? '<div class="err">' + esc(a.err) + "</div>" : "") +
+    '<div class="actions"><button class="btn primary" data-act="additem">' + (it ? "Aplicar cambios" : "Agregar al catálogo") + "</button>" + (it ? '<button class="btn" data-act="canceledit">Cancelar</button>' : "") + "</div>" +
+    "</div></div></section>";
+  var settings = '<section class="panel"><div><div class="eyebrow">Ajustes</div><h3>Datos de la tienda</h3></div>' +
+    '<div class="field"><label for="s-wa">Número de WhatsApp para pedidos (con código de país)</label><input id="s-wa" data-s="whatsapp" type="tel" value="' + esc(S.settings.whatsapp) + '" placeholder="Ej.: 50499998888"></div>' +
+    '<div class="row2"><div class="field"><label for="s-cur">Moneda</label><input id="s-cur" data-s="currency" value="' + esc(S.settings.currency) + '" placeholder="$, L, Q…"></div>' +
+    '<div class="field"><label for="s-link">Enlace de la tienda (para el QR)</label><input id="s-link" data-s="link" value="' + esc(S.settings.link) + '"></div></div></section>';
+  var inv = '<section class="panel"><div class="section-head" style="margin:0"><div><div class="eyebrow">Inventario</div><h3>Todas las prendas</h3></div>' +
+    (samp ? '<button class="btn sm danger' + (armed === "samples" ? " armed" : "") + '" data-act="clearsamples">' + (armed === "samples" ? "¿Quitar " + samp + " muestras? Toca otra vez" : "Quitar prendas de muestra") + "</button>" : "") + "</div>" +
+    '<div class="stats"><div class="stat"><b>' + tot + '</b><span>en catálogo</span></div><div class="stat"><b>' + (tot - sold) + '</b><span>disponibles</span></div><div class="stat"><b>' + sold + '</b><span>vendidas</span></div><div class="stat"><b>' + samp + "</b><span>de muestra</span></div></div>" +
+    '<div class="inv"><table><thead><tr><th></th><th>Prenda</th><th>Sección</th><th>Talla</th><th>Precio</th><th>Estado</th><th></th></tr></thead><tbody>' +
+    S.items.slice().sort(function(x, y){ return y.t - x.t; }).map(function(i){
+      return '<tr><td><div class="line-item" style="display:block;padding:0;border:0"><div class="thumb" style="width:36px;height:45px">' + media(i, true) + "</div></div></td><td>" + esc(i.name) + "</td><td>" + secName(i.sec) + "</td><td>" + esc(i.size) + '</td><td class="price">' + money(i.price) + '</td><td><span class="st ' + (i.sold ? "no" : "ok") + '">' + (i.sold ? "Vendida" : "Disponible") + '</span></td><td style="white-space:nowrap"><button class="btn sm" data-act="sold" data-id="' + i.id + '">' + (i.sold ? "Disponible" : "Vendida") + '</button> <button class="btn sm" data-act="edit" data-id="' + i.id + '">Editar</button> ' + delBtn(i.id) + "</td></tr>";
+    }).join("") + "</tbody></table></div></section>";
+  return '<div class="section-head"><div><div class="eyebrow">Panel del dueño</div><h2>Administra JJ Store</h2></div><span class="muted" style="font-size:.88rem">Los cambios se publican al tocar <b>Guardar y publicar</b>.</span></div>' +
+    '<div style="display:flex;flex-direction:column;gap:20px">' + form + settings + inv + "</div>";
+}
+
+/* ---------- Actions ---------- */
+var toastMsg = "", toastT = 0;
+function toast(m){ toastMsg = m; clearTimeout(toastT); render(); toastT = setTimeout(function(){ toastMsg = ""; var t = document.querySelector(".toast"); if (t) t.remove(); }, 3200); }
+function change(){ dirty++; }
+function setTab(t){ ui.tab = t; if (t !== "dueno" || isOwner) LS.set("jj.tab", t); armed = null; render(); window.scrollTo(0, 0); }
+function copy(text, el){
+  var done = function(){ toast("Copiado"); };
+  try { navigator.clipboard.writeText(text).then(done, function(){ sel(el); }); } catch(e){ sel(el); }
+}
+function sel(el){ if (!el) return; var r = document.createRange(); r.selectNodeContents(el); var s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Texto seleccionado: cópialo con Ctrl+C o mantén presionado"); }
+function arm(key){ if (armed === key){ armed = null; return true; } armed = key; setTimeout(function(){ if (armed === key){ armed = null; render(); } }, 4000); return false; }
+
+app.addEventListener("click", function(e){
+  var b = e.target.closest("[data-act]"); if (!b) return;
+  var act = b.getAttribute("data-act"), id = b.getAttribute("data-id"), v = b.getAttribute("data-v");
+  if (act === "tab") return setTab(v);
+  if (act === "sec"){ ui.sec = v; ui.cat = "Todas"; LS.set("jj.sec", v); return render(); }
+  if (act === "cat"){ ui.cat = v; return render(); }
+  if (act === "cart"){
+    var k = cart.indexOf(id); if (k >= 0) cart.splice(k, 1); else cart.push(id);
+    LS.set("jj.cart", cart); orderMsg = null;
+    if (ui.tab === "catalogo"){ renderGrid(); var p = document.querySelector('nav.tabs [data-v="pedido"]'); if (p) p.innerHTML = "Hacer pedido" + (cartItems().length ? ' <span class="pill">' + cartItems().length + "</span>" : ""); }
+    else render();
+    return;
+  }
+  if (act === "order"){ var r = buildOrder(); orderErr = r.err || ""; orderMsg = r.msg || null; render(); var m = document.getElementById("msg"); if (m) m.scrollIntoView({ block: "nearest" }); return; }
+  if (act === "copymsg") return copy(orderMsg, document.getElementById("msg"));
+  if (act === "copylink") return copy(S.settings.link, document.getElementById("link"));
+  if (act === "saveqr") return saveQr();
+  if (!isOwner) return;
+  if (act === "sold"){ var it = byId(id); it.sold = !it.sold; change(); return render(); }
+  if (act === "del"){
+    if (!arm("del:" + id)) return render();
+    var d = byId(id); if (d && d.img) pendingDel.push(d.img);
+    S.items = S.items.filter(function(i){ return i.id !== id; }); if (adm.editing === id) resetAdm(); change(); return render();
+  }
+  if (act === "clearsamples"){
+    if (!arm("samples")) return render();
+    S.items = S.items.filter(function(i){ return i.img; }); change(); return render();
+  }
+  if (act === "edit"){
+    var x = byId(id); adm = { editing: id, blob: null, preview: null, name: x.name, sec: x.sec, cat: x.cat, size: x.size, price: String(x.price), cond: x.cond, err: "" };
+    return setTab("dueno");
+  }
+  if (act === "canceledit"){ resetAdm(); return render(); }
+  if (act === "additem") return addItem(b);
+  if (act === "discard"){ S = JSON.parse(JSON.stringify(STORE)); dirty = 0; pendingDel = []; settingsTouched = false; resetAdm(); return toast("Cambios descartados"); }
+  if (act === "save") return save(b);
+});
+app.addEventListener("input", function(e){
+  var t = e.target;
+  if (t.id === "q"){ ui.q = t.value; return renderGrid(); }
+  if (t.dataset.d){ draft[t.dataset.d] = t.value; LS.set("jj.draft", draft); return; }
+  if (t.dataset.a){ adm[t.dataset.a] = t.value; return; }
+  if (t.dataset.s){ S.settings[t.dataset.s] = t.value.trim(); if (!settingsTouched){ settingsTouched = true; change(); renderSaveBarOnly(); } return; }
+});
+var settingsTouched = false;
+function renderSaveBarOnly(){ if (!document.querySelector(".savebar")){ var y = scrollY, f = document.activeElement && document.activeElement.id; render(); scrollTo(0, y); var el = f && document.getElementById(f); if (el){ el.focus(); try { el.setSelectionRange(el.value.length, el.value.length); } catch(e){} } } }
+app.addEventListener("change", function(e){
+  var t = e.target;
+  if (t.id === "hideSold"){ ui.hideSold = t.checked; LS.set("jj.hide", t.checked); return renderGrid(); }
+  if (t.dataset.d){ draft[t.dataset.d] = t.value; LS.set("jj.draft", draft); return; }
+  if (t.dataset.a){ adm[t.dataset.a] = t.value; return; }
+  if (t.id === "a-file" && t.files && t.files[0]){
+    shrink(t.files[0]).then(function(bl){ adm.blob = bl; if (adm.preview) URL.revokeObjectURL(adm.preview); adm.preview = URL.createObjectURL(bl); adm.err = ""; render(); },
+      function(){ adm.err = "No se pudo leer esa imagen. Prueba con una foto JPG o PNG."; render(); });
+  }
+});
+function resetAdm(){ if (adm.preview) URL.revokeObjectURL(adm.preview); adm = { editing: null, blob: null, preview: null, name: "", sec: adm.sec || "h", cat: "", size: "", price: "", cond: "Buen estado", err: "" }; }
+function shrink(file){
+  return new Promise(function(res, rej){
+    var url = URL.createObjectURL(file), img = new Image();
+    img.onload = function(){
+      var max = 1400, w = img.naturalWidth, hh = img.naturalHeight, s = Math.min(1, max / Math.max(w, hh));
+      var c = document.createElement("canvas"); c.width = Math.round(w * s); c.height = Math.round(hh * s);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+      c.toBlob(function(b){ b ? res(b) : rej(); }, "image/jpeg", 0.85);
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); rej(); };
+    img.src = url;
+  });
+}
+function addItem(btn){
+  var a = adm, editing = a.editing ? byId(a.editing) : null;
+  var price = Number(a.price);
+  if (!a.name.trim()) a.err = "Escribe el nombre de la prenda.";
+  else if (!a.cat.trim()) a.err = "Escribe la categoría.";
+  else if (!a.size.trim()) a.err = "Escribe la talla.";
+  else if (!(price >= 0) || a.price === "") a.err = "Escribe el precio.";
+  else if (!editing && !a.blob) a.err = "Agrega una foto de la prenda.";
+  else a.err = "";
+  if (a.err) return render();
+  var finish = function(imgId){
+    if (editing){
+      if (imgId){ if (editing.img) pendingDel.push(editing.img); editing.img = imgId; editing.art = null; }
+      editing.name = a.name.trim(); editing.sec = a.sec; editing.cat = a.cat.trim(); editing.size = a.size.trim(); editing.price = price; editing.cond = a.cond;
+      toast("Prenda actualizada. Toca Guardar y publicar.");
+    } else {
+      S.items.push({ id: "p" + Date.now().toString(36), name: a.name.trim(), sec: a.sec, cat: a.cat.trim(), size: a.size.trim(), price: price, cond: a.cond, sold: false, art: null, img: imgId, t: Date.now() });
+      toast("Prenda agregada. Toca Guardar y publicar.");
+    }
+    change(); resetAdm(); render();
+  };
+  if (!a.blob) return finish(null);
+  if (!assets){ a.err = "Tu cuenta no tiene permiso para subir fotos aquí."; return render(); }
+  btn.disabled = true; btn.textContent = "Subiendo foto…";
+  assets.upload(a.blob).then(function(r){ tempUrls[r.id] = r.url; finish(r.id); }, function(err){
+    a.err = "No se pudo subir la foto (" + ((err && err.code) || "error") + "). Intenta de nuevo."; render();
+  });
+}
+function save(btn){
+  if (!art){ return toast("No se puede publicar desde esta vista."); }
+  btn.disabled = true; btn.textContent = "Publicando…";
+  var next = JSON.parse(JSON.stringify(S));
+  var used = {}; next.items.forEach(function(i){ if (i.img) used[i.img] = 1; });
+  SS.set("jj.del", pendingDel.filter(function(x){ return !used[x]; }));
+  SS.set("jj.saved", 1);
+  art.publish(buildDoc(next)).then(function(){}, function(err){
+    SS.del("jj.saved");
+    var c = err && err.code;
+    if (c === "conflict") toast("Hay una versión más nueva; la página se recargará.");
+    else if (c === "not_writer" || c === "not_granted") toast("Tu cuenta no puede publicar cambios en esta tienda.");
+    else toast("No se pudo publicar (" + (c || "error") + "). Intenta de nuevo.");
+    render();
+  });
+}
+function buildDoc(state){
+  var json = JSON.stringify(state).replace(/</g, "\\u003c");
+  return '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>' + RESET + "</style></head><body>" +
+    "<title>JJ Store</title>\n" + document.getElementById("app-fonts").outerHTML + "\n" +
+    '<style id="app-style">' + document.getElementById("app-style").textContent + "</style>\n" +
+    '<div id="app"></div>\n' +
+    '<' + SC + ' src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></' + SC + '>\n' +
+    '<' + SC + ' type="application/json" id="jj-state">' + json + '</' + SC + '>\n' +
+    '<' + SC + ' id="app-js">' + document.getElementById("app-js").textContent + '</' + SC + '>\n</body></html>';
+}
+function saveQr(){
+  var src = document.querySelector("#qr canvas") || document.querySelector("#qr img");
+  if (!src || !dl) return;
+  var c = document.createElement("canvas"); c.width = 900; c.height = 1140;
+  var x = c.getContext("2d");
+  x.fillStyle = "#ffffff"; x.fillRect(0, 0, c.width, c.height);
+  x.fillStyle = "#16243a"; x.textAlign = "center";
+  x.font = '150px Yellowtail, "Brush Script MT", cursive'; x.fillText("JJ Store", 450, 190);
+  x.font = '600 30px "IBM Plex Mono", monospace'; x.fillText("R O P A   A M E R I C A N A", 450, 250);
+  try { x.drawImage(src, 150, 300, 600, 600); } catch(e){}
+  x.font = '600 34px Archivo, sans-serif'; x.fillText("Escanea y mira el catálogo", 450, 990);
+  x.fillStyle = "#c8322b"; x.fillRect(330, 1030, 240, 6);
+  c.toBlob(function(b){
+    dl.save({ filename: "jj-store-qr.png", data: b }).then(function(){}, function(err){ if (!(err && err.code === "declined")) toast("No se pudo descargar; toma una captura del QR."); });
+  }, "image/png");
+}
+
+/* ---------- Boot ---------- */
+if (SS.get("jj.saved", 0)){ SS.del("jj.saved"); toastMsg = "Guardado y publicado"; toastT = setTimeout(function(){ toastMsg = ""; var t = document.querySelector(".toast"); if (t) t.remove(); }, 3200); }
+render();
+var C = window.claude;
+if (C && C.use){
+  C.use("user").then(function(u){
+    var p = u ? u.canEdit() : Promise.resolve(false);
+    return p.then(function(ok){ isOwner = !!ok; ownerChecked = true; });
+  }).catch(function(){ ownerChecked = true; }).then(function(){
+    if (!isOwner) return;
+    return Promise.all([C.use("artifact"), C.use("assets"), C.use("downloads")]).then(function(r){
+      art = r[0]; assets = r[1]; dl = r[2];
+      var del = SS.get("jj.del", []);
+      if (assets && del.length){ SS.del("jj.del"); var used = {}; S.items.forEach(function(i){ if (i.img) used[i.img] = 1; }); del.forEach(function(id){ if (!used[id]) assets.delete(id).catch(function(){}); }); }
+    });
+  }).then(function(){
+    if (!dl) return C.use("downloads").then(function(d){ dl = d; });
+  }).catch(function(){}).then(function(){
+    render();
+  });
+} else { ownerChecked = true; }
+})();
+</script>
