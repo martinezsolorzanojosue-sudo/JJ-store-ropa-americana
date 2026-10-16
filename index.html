@@ -222,7 +222,7 @@ else if (["pedido","compartir","dueno"].indexOf(h0) >= 0) ui.tab = h0;
 
 function blankAdm(sec){ return { editing: null, blob: null, preview: null, name: "", sec: sec, cat: "", size: "", price: "", cond: "Buen estado", err: "" }; }
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]; }); }
-function money(n){ var c = settings.currency || "₡"; if (/^col[oó]n(es)?$|^crc$/i.test(c.trim())) c = "₡"; return c + (c.length > 1 ? " " : "") + Number(n || 0).toLocaleString("es", { maximumFractionDigits: 2 }); }
+function money(n){ var c = settings.currency || "₡"; if (/^col[oó]n(es)?$|^crc$/i.test(c.trim())) c = "₡"; return c + (c.length > 1 ? " " : "") + Number(n || 0).toLocaleString("de-DE", { maximumFractionDigits: 2 }); }
 function byId(id){ for (var i = 0; i < items.length; i++) if (items[i].id === id) return items[i]; return null; }
 function secName(s){ for (var i = 0; i < settings.sections.length; i++) if (settings.sections[i].id === s) return settings.sections[i].name; return s === "h" ? "Hombre" : s === "m" ? "Mujer" : "Otros"; }
 function isMeasure(s){ return /[0-9] *(ml|oz|g|gr|kg|l|lb|cc)(?![a-z])/i.test(s || ""); }
