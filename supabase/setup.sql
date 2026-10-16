@@ -151,3 +151,10 @@ select * from (values
   ('Cárdigan Gap tejido', 'm', 'Suéteres', 'M', 300, 'Como nuevo', false, '{"k":"sweater","c":"#d8c3a5"}'::jsonb, now() - interval '1 minutes')
 ) as v(name, section, category, size, price, condition, sold, art, created_at)
 where not exists (select 1 from public.products);
+
+-- 6. Secciones libres y talla opcional ------------------------------------
+alter table public.products drop constraint if exists products_section_check;
+alter table public.products add constraint products_section_check check (char_length(section) between 1 and 40);
+alter table public.products alter column size drop not null;
+alter table public.settings add column if not exists sections jsonb not null default
+  '[{"id":"h","name":"Hombre"},{"id":"m","name":"Mujer"},{"id":"ninos","name":"Niños"},{"id":"calzado","name":"Calzado"},{"id":"accesorios","name":"Accesorios"},{"id":"hogar","name":"Hogar"},{"id":"otros","name":"Otros"}]'::jsonb;

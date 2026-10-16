@@ -177,6 +177,14 @@ footer.foot .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:
 .order header{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
 .order ul{margin:0;padding-left:18px}
 .skel{background:var(--tile);border-radius:14px;aspect-ratio:4/6}
+.fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:25;display:flex;flex-direction:column;align-items:flex-end;gap:10px;max-width:calc(100% - 32px)}
+.cartbar{background:var(--ink);color:var(--bg);border:0;border-radius:999px;padding:12px 18px;font-weight:700;cursor:pointer;display:inline-flex;gap:10px;align-items:center;box-shadow:var(--shadow)}
+.cartbar .price{color:var(--kraft)}
+.wa{--wa:#25d366;background:var(--wa);color:#08311a;border-radius:999px;padding:11px 16px;font-weight:700;display:inline-flex;gap:8px;align-items:center;text-decoration:none;box-shadow:var(--shadow)}
+.wa svg,.cartbar svg{width:20px;height:20px;flex:none}
+.ask{font-size:.8rem;color:var(--muted);text-align:center;text-decoration:underline}
+.secrow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center}
+.secrow .count{font-size:.8rem;color:var(--muted);white-space:nowrap}
 @media (prefers-reduced-motion:no-preference){.skel{animation:pulse 1.2s ease-in-out infinite alternate}@keyframes pulse{to{opacity:.5}}}
 </style>
 </head>
@@ -193,7 +201,8 @@ var SUPABASE_KEY = "sb_publishable_22GbfspjWrgPE1keewFPVA_0P_Vjd-c";
 var BUCKET = "prendas";
 
 var sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
-var items = [], settings = { whatsapp: "", currency: "$", link: "" }, orders = [];
+var DEFAULT_SECTIONS = [{ id: "h", name: "Hombre" }, { id: "m", name: "Mujer" }, { id: "ninos", name: "Niños" }, { id: "calzado", name: "Calzado" }, { id: "accesorios", name: "Accesorios" }, { id: "hogar", name: "Hogar" }, { id: "otros", name: "Otros" }];
+var items = [], settings = { whatsapp: "", currency: "$", link: "", sections: DEFAULT_SECTIONS.slice() }, orders = [];
 var loading = true, loadErr = "", session = null, isOwner = false;
 var LS = {
   get: function(k, d){ try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch(e){ return d; } },
@@ -215,7 +224,11 @@ function blankAdm(sec){ return { editing: null, blob: null, preview: null, name:
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]; }); }
 function money(n){ var c = settings.currency || "$"; return c + (c.length > 1 ? " " : "") + Number(n || 0).toLocaleString("es", { maximumFractionDigits: 2 }); }
 function byId(id){ for (var i = 0; i < items.length; i++) if (items[i].id === id) return items[i]; return null; }
-function secName(s){ return s === "h" ? "Hombre" : "Mujer"; }
+function secName(s){ for (var i = 0; i < settings.sections.length; i++) if (settings.sections[i].id === s) return settings.sections[i].name; return s === "h" ? "Hombre" : s === "m" ? "Mujer" : "Otros"; }
+function sizeTxt(i){ return i.size ? "talla " + i.size : ""; }
+function waLink(text){ var n = waNumber(); return n ? "https://wa.me/" + n + "?text=" + encodeURIComponent(text) : ""; }
+var IC_CART = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.6 12.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.5L22 8H6"/></svg>';
+var IC_CHAT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 20.5l1.6-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg>';
 function imgUrl(p){ return SUPABASE_URL + "/storage/v1/object/public/" + BUCKET + "/" + encodeURIComponent(p); }
 function storeLink(){ return settings.link || (location.origin + location.pathname); }
 function fromRow(r){ return { id: r.id, name: r.name, sec: r.section, cat: r.category, size: r.size, price: Number(r.price), cond: r.condition, sold: r.sold, img: r.image_path, art: r.art, t: Date.parse(r.created_at) }; }
@@ -251,20 +264,6 @@ var LOGO = '<svg viewBox="0 0 320 130" role="img" aria-label="JJ Store, ropa ame
   '<text x="160" y="80" text-anchor="middle" font-family="Yellowtail, Brush Script MT, cursive" font-size="72" fill="var(--ink)" stroke="var(--bg)" stroke-width="8" paint-order="stroke" stroke-linejoin="round">JJ Store</text>' +
   '<text x="160" y="114" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12.5" letter-spacing="4.5" fill="var(--muted)" font-weight="600">ROPA AMERICANA</text></svg>';
 
-function card(it){
-  var inC = cart.indexOf(it.id) >= 0;
-  var act = it.sold ? '<button class="btn block" disabled>Vendida</button>' :
-    inC ? '<button class="btn in block" data-act="cart" data-id="' + it.id + '">En tu pedido ✓</button>' :
-    '<button class="btn primary block" data-act="cart" data-id="' + it.id + '">Lo quiero</button>';
-  var own = isOwner ? '<div class="own"><button class="btn sm" data-act="sold" data-id="' + it.id + '">' + (it.sold ? "Marcar disponible" : "Marcar vendida") + '</button><button class="btn sm" data-act="edit" data-id="' + it.id + '">Editar</button>' + delBtn(it.id) + "</div>" : "";
-  return '<article class="card' + (it.sold ? " sold" : "") + '"><div class="ph">' + media(it) + '<span class="tag">' + money(it.price) + "</span>" + (it.sold ? '<div class="stamp"><span>VENDIDO</span></div>' : "") + "</div>" +
-    '<div class="info"><div class="name">' + esc(it.name) + '</div><div class="meta"><b>Talla ' + esc(it.size) + "</b><span>" + esc(it.cond) + "</span><span>· " + esc(it.cat) + '</span></div><div class="act">' + act + "</div></div>" + own + "</article>";
-}
-function delBtn(id){
-  var on = armed === "del:" + id;
-  return '<button class="btn sm danger' + (on ? " armed" : "") + '" data-act="del" data-id="' + id + '">' + (on ? "¿Eliminar? Toca otra vez" : "Eliminar") + "</button>";
-}
-
 /* ---------- Datos ---------- */
 function friendly(err){
   var c = err && (err.code || ""), m = (err && err.message) || "";
@@ -283,7 +282,9 @@ function loadCatalog(){
     if (r[0].error){ loadErr = friendly(r[0].error); return render(); }
     loadErr = "";
     items = r[0].data.map(fromRow);
-    if (r[1].data) settings = { whatsapp: r[1].data.whatsapp || "", currency: r[1].data.currency || "$", link: r[1].data.link || "" };
+    if (r[1].data) settings = { whatsapp: r[1].data.whatsapp || "", currency: r[1].data.currency || "$", link: r[1].data.link || "",
+      sections: Array.isArray(r[1].data.sections) && r[1].data.sections.length ? r[1].data.sections : DEFAULT_SECTIONS.slice() };
+    items.forEach(function(i){ if (!settings.sections.some(function(s){ return s.id === i.sec; })) settings.sections.push({ id: i.sec, name: secName(i.sec) }); });
     cart = cart.filter(function(id){ return byId(id); }); LS.set("jj.cart", cart);
     render();
   }, function(e){ loading = false; loadErr = friendly(e); render(); });
@@ -301,7 +302,7 @@ function checkOwner(){
 var app = document.getElementById("app");
 function render(){
   var inCart = cartItems().length;
-  var tabs = [["catalogo","Catálogo"],["pedido","Hacer pedido"],["compartir","Compartir"]];
+  var tabs = [["catalogo","Catálogo"],["pedido","Carrito"],["compartir","Compartir"]];
   if (isOwner) tabs.push(["dueno","Dueño" + (newOrders() ? ' <span class="pill">' + newOrders() + "</span>" : "")]);
   var nav = tabs.map(function(t){
     return '<button data-act="tab" data-v="' + t[0] + '"' + (ui.tab === t[0] ? ' aria-current="page"' : "") + ">" + t[1] + (t[0] === "pedido" && inCart ? ' <span class="pill">' + inCart + "</span>" : "") + "</button>";
@@ -314,6 +315,7 @@ function render(){
     '<main><div class="wrap">' + body + "</div></main>" +
     '<footer class="foot"><div class="wrap"><span>JJ Store · Ropa americana de paca, seleccionada pieza por pieza.</span>' +
     (session ? '<button class="linkbtn" data-act="logout">Cerrar sesión</button>' : '<button class="linkbtn" data-act="tab" data-v="dueno">Acceso del dueño</button>') + "</div></footer>" +
+    fab() +
     (toastMsg ? '<div class="toast" role="status">' + esc(toastMsg) + "</div>" : "");
   if (ui.tab === "catalogo") renderGrid();
   if (ui.tab === "compartir") drawQr();
@@ -321,21 +323,33 @@ function render(){
   var el = f && document.getElementById(f);
   if (el && el.tagName !== "BUTTON"){ el.focus(); try { if (selStart != null) el.setSelectionRange(selStart, selStart); } catch(e){} }
 }
+function fab(){
+  if (ui.tab === "dueno" || ui.tab === "pedido") return "";
+  var its = cartItems().filter(function(i){ return !i.sold; });
+  var total = its.reduce(function(s, i){ return s + i.price; }, 0);
+  var chat = waLink("Hola JJ Store, tengo una pregunta.");
+  if (!its.length && !chat) return "";
+  return '<div class="fab">' + (chat ? '<a class="wa" target="_blank" rel="noopener" href="' + esc(chat) + '">' + IC_CHAT + "Escríbenos</a>" : "") +
+    (its.length ? '<button class="cartbar" data-act="tab" data-v="pedido">' + IC_CART + "Ver carrito (" + its.length + ') <span class="price">' + money(total) + "</span></button>" : "") + "</div>";
+}
 function newOrders(){ return orders.filter(function(o){ return o.status === "nuevo"; }).length; }
 
 function vCatalog(){
   if (loading) return '<div class="section-head"><div><div class="eyebrow">Catálogo</div><h2>Cargando prendas…</h2></div></div><div class="grid">' + new Array(9).join('<div class="skel"></div>') + "</div>";
   if (loadErr) return '<div class="empty"><p>' + esc(loadErr) + '</p><button class="btn" data-act="reload">Intentar de nuevo</button></div>';
-  var hs = items.filter(function(i){ return i.sec === "h"; }), ms = items.filter(function(i){ return i.sec === "m"; });
-  var list = ui.sec === "h" ? hs : ms;
+  var avail = function(a){ return a.filter(function(i){ return !i.sold; }).length; };
+  var inSec = function(id){ return items.filter(function(i){ return i.sec === id; }); };
+  var secs = settings.sections.filter(function(s){ return inSec(s.id).length; });
+  if (!secs.length) return '<div class="empty">Todavía no hay artículos en el catálogo.</div>';
+  if (!secs.some(function(s){ return s.id === ui.sec; })) ui.sec = secs[0].id;
+  var list = inSec(ui.sec);
   var cats = ["Todas"]; list.forEach(function(i){ if (cats.indexOf(i.cat) < 0) cats.push(i.cat); });
   if (cats.indexOf(ui.cat) < 0) ui.cat = "Todas";
-  var avail = function(a){ return a.filter(function(i){ return !i.sold; }).length; };
   var samples = items.some(function(i){ return !i.img; });
-  return '<div class="section-head"><div><div class="eyebrow">Catálogo · ' + items.length + " prendas · " + avail(items) + ' disponibles</div><h2>Escoge tu prenda</h2></div>' +
-    '<div class="seg" role="group" aria-label="Sección">' +
-    '<button data-act="sec" data-v="h" aria-pressed="' + (ui.sec === "h") + '">Hombre <small>' + avail(hs) + "</small></button>" +
-    '<button data-act="sec" data-v="m" aria-pressed="' + (ui.sec === "m") + '">Mujer <small>' + avail(ms) + "</small></button></div></div>" +
+  return '<div class="section-head"><div><div class="eyebrow">Catálogo · ' + items.length + " artículos · " + avail(items) + ' disponibles</div><h2>Mira lo que tenemos</h2></div>' +
+    (secs.length > 1 ? '<div class="seg" role="group" aria-label="Sección" style="flex-wrap:wrap">' + secs.map(function(s){
+      return '<button data-act="sec" data-v="' + esc(s.id) + '" aria-pressed="' + (ui.sec === s.id) + '">' + esc(s.name) + " <small>" + avail(inSec(s.id)) + "</small></button>";
+    }).join("") + "</div>" : "") + "</div>" +
     '<div class="chips" role="group" aria-label="Categoría">' + cats.map(function(c){ return '<button class="chip" data-act="cat" data-v="' + esc(c) + '" aria-pressed="' + (ui.cat === c) + '">' + esc(c) + "</button>"; }).join("") + "</div>" +
     '<div class="toolbar"><input class="search" id="q" type="search" placeholder="Buscar marca, prenda o talla" value="' + esc(ui.q) + '" aria-label="Buscar">' +
     '<label class="check"><input type="checkbox" id="hideSold"' + (ui.hideSold ? " checked" : "") + "> Ocultar vendidas</label></div>" +
@@ -352,17 +366,31 @@ function renderGrid(){
   if (!list.length){ g.innerHTML = '<div class="empty" style="grid-column:1/-1">' + (items.length ? "No hay prendas que coincidan. Prueba otra categoría o búsqueda." : "Todavía no hay prendas en el catálogo.") + "</div>"; return; }
   g.innerHTML = list.map(card).join("");
 }
+function card(it){
+  var inC = cart.indexOf(it.id) >= 0;
+  var act = it.sold ? '<button class="btn block" disabled>Vendido</button>' :
+    inC ? '<button class="btn in block" data-act="cart" data-id="' + it.id + '">En el carrito ✓</button>' :
+    '<button class="btn primary block" data-act="cart" data-id="' + it.id + '">' + IC_CART.replace("<svg", '<svg width="18" height="18"') + "Agregar al carrito</button>";
+  var ask = !it.sold && waNumber() ? '<a class="ask" target="_blank" rel="noopener" href="' + esc(waLink("Hola JJ Store, me interesa: " + it.name + (it.size ? " (talla " + it.size + ")" : "") + " — " + money(it.price))) + '">Preguntar por WhatsApp</a>' : "";
+  var own = isOwner ? '<div class="own"><button class="btn sm" data-act="sold" data-id="' + it.id + '">' + (it.sold ? "Marcar disponible" : "Marcar vendido") + '</button><button class="btn sm" data-act="edit" data-id="' + it.id + '">Editar</button>' + delBtn(it.id) + "</div>" : "";
+  return '<article class="card' + (it.sold ? " sold" : "") + '"><div class="ph">' + media(it) + '<span class="tag">' + money(it.price) + "</span>" + (it.sold ? '<div class="stamp"><span>VENDIDO</span></div>' : "") + "</div>" +
+    '<div class="info"><div class="name">' + esc(it.name) + '</div><div class="meta">' + (it.size ? "<b>Talla " + esc(it.size) + "</b>" : "") + "<span>" + esc(it.cond) + "</span><span>· " + esc(it.cat) + '</span></div><div class="act" style="display:flex;flex-direction:column;gap:6px">' + act + ask + "</div></div>" + own + "</article>";
+}
+function delBtn(id){
+  var on = armed === "del:" + id;
+  return '<button class="btn sm danger' + (on ? " armed" : "") + '" data-act="del" data-id="' + id + '">' + (on ? "¿Eliminar? Toca otra vez" : "Eliminar") + "</button>";
+}
 
 function cartItems(){ return cart.map(byId).filter(Boolean); }
 function vPedido(){
   var its = cartItems();
   var avail = its.filter(function(i){ return !i.sold; });
   var total = avail.reduce(function(s, i){ return s + i.price; }, 0);
-  var left = '<section class="panel"><div><div class="eyebrow">Paso 1</div><h3>Tu pedido</h3></div>' +
+  var left = '<section class="panel"><div><div class="eyebrow">Paso 1</div><h3>Tu carrito</h3></div>' +
     (its.length ? its.map(function(i){
-      return '<div class="line-item"><div class="thumb">' + media(i, true) + '</div><div style="min-width:0"><div style="font-weight:600">' + esc(i.name) + '</div><div class="muted" style="font-size:.82rem">' + secName(i.sec) + " · Talla " + esc(i.size) + (i.sold ? ' · <span class="err">Ya se vendió</span>' : "") + '</div></div><div style="text-align:right"><div class="price">' + money(i.price) + '</div><button class="linkbtn" data-act="cart" data-id="' + i.id + '">Quitar</button></div></div>';
+      return '<div class="line-item"><div class="thumb">' + media(i, true) + '</div><div style="min-width:0"><div style="font-weight:600">' + esc(i.name) + '</div><div class="muted" style="font-size:.82rem">' + secName(i.sec) + (i.size ? " · Talla " + esc(i.size) : "") + (i.sold ? ' · <span class="err">Ya se vendió</span>' : "") + '</div></div><div style="text-align:right"><div class="price">' + money(i.price) + '</div><button class="linkbtn" data-act="cart" data-id="' + i.id + '">Quitar</button></div></div>';
     }).join("") + '<div class="total"><span>Total</span><span class="price">' + money(total) + "</span></div>"
-    : '<p class="muted" style="margin:0">Aún no agregas prendas. Ve al catálogo y toca <b>Lo quiero</b> en las que te gusten, o encarga abajo lo que buscas.</p><div><button class="btn" data-act="tab" data-v="catalogo">Ver catálogo</button></div>') +
+    : '<p class="muted" style="margin:0">Tu carrito está vacío. Ve al catálogo y toca <b>Agregar al carrito</b> en todo lo que te guste, o encarga abajo lo que buscas.</p><div><button class="btn" data-act="tab" data-v="catalogo">Ver catálogo</button></div>') +
     "</section>";
   var f = draft, wa = waNumber();
   var right = '<section class="panel"><div><div class="eyebrow">Paso 2</div><h3>Tus datos</h3></div>' +
@@ -380,7 +408,7 @@ function vPedido(){
       '<button class="btn" data-act="copymsg">Copiar pedido</button><button class="btn" data-act="neworder">Hacer otro pedido</button></div>' +
       (wa ? '<p class="muted" style="margin:0;font-size:.85rem">WhatsApp de JJ Store: <b>+' + wa + "</b></p>" : "")
     : "") + "</section>";
-  return '<div class="section-head"><div><div class="eyebrow">Pedidos y encargos</div><h2>Hacer un pedido</h2></div></div><div class="cols">' + left + right + "</div>";
+  return '<div class="section-head"><div><div class="eyebrow">Carrito · ' + cartItems().length + ' artículos</div><h2>Finalizar pedido</h2></div></div><div class="cols">' + left + right + "</div>";
 }
 function waNumber(){ return String(settings.whatsapp || "").replace(/\D/g, ""); }
 function buildOrder(){
@@ -392,7 +420,7 @@ function buildOrder(){
   var lines = ["Hola JJ Store, quiero hacer un pedido:"];
   if (its.length){
     lines.push("");
-    its.forEach(function(i){ lines.push("• " + i.name + " (" + secName(i.sec) + ", talla " + i.size + ") — " + money(i.price)); });
+    its.forEach(function(i){ lines.push("• " + i.name + " (" + secName(i.sec) + (i.size ? ", talla " + i.size : "") + ") — " + money(i.price)); });
     lines.push("Total: " + money(total));
   }
   if (f.wish.trim()){ lines.push(""); lines.push("Encargo: " + f.wish.trim()); }
@@ -456,13 +484,13 @@ function vItemForm(){
   var a = adm, it = a.editing ? byId(a.editing) : null;
   var cats = []; items.forEach(function(i){ if (cats.indexOf(i.cat) < 0) cats.push(i.cat); });
   var prev = a.preview || (it && it.img ? imgUrl(it.img) : null);
-  return '<section class="panel" id="item-form"><div><div class="eyebrow">' + (it ? "Editando" : "Nueva prenda") + "</div><h3>" + (it ? "Editar: " + esc(it.name) : "Subir prenda") + "</h3></div>" +
+  return '<section class="panel" id="item-form"><div><div class="eyebrow">' + (it ? "Editando" : "Nuevo artículo") + "</div><h3>" + (it ? "Editar: " + esc(it.name) : "Subir artículo") + "</h3></div>" +
     '<div class="adm-grid"><label class="drop" for="a-file">' + (prev ? '<img src="' + esc(prev) + '" alt="Foto de la prenda">' : "<span>Toca para elegir o tomar una foto</span>") + '</label><input id="a-file" type="file" accept="image/*" hidden>' +
     '<div style="display:flex;flex-direction:column;gap:12px;min-width:0">' +
-    '<div class="field"><label for="a-name">Nombre de la prenda</label><input id="a-name" data-a="name" maxlength="120" value="' + esc(a.name) + '" placeholder="Ej.: Chaqueta Levi\'s de mezclilla"></div>' +
-    '<div class="row2"><div class="field"><label for="a-sec">Sección</label><select id="a-sec" data-a="sec"><option value="h"' + (a.sec === "h" ? " selected" : "") + '>Hombre</option><option value="m"' + (a.sec === "m" ? " selected" : "") + ">Mujer</option></select></div>" +
+    '<div class="field"><label for="a-name">Nombre del artículo</label><input id="a-name" data-a="name" maxlength="120" value="' + esc(a.name) + '" placeholder="Ej.: Chaqueta Levi\'s de mezclilla"></div>' +
+    '<div class="row2"><div class="field"><label for="a-sec">Sección</label><select id="a-sec" data-a="sec">' + settings.sections.map(function(s){ return '<option value="' + esc(s.id) + '"' + (a.sec === s.id ? " selected" : "") + ">" + esc(s.name) + "</option>"; }).join("") + "</select></div>" +
     '<div class="field"><label for="a-cat">Categoría</label><input id="a-cat" data-a="cat" maxlength="60" list="cats" value="' + esc(a.cat) + '" placeholder="Camisas, Vestidos…"><datalist id="cats">' + cats.map(function(c){ return '<option value="' + esc(c) + '">'; }).join("") + "</datalist></div></div>" +
-    '<div class="row2"><div class="field"><label for="a-size">Talla</label><input id="a-size" data-a="size" maxlength="30" value="' + esc(a.size) + '" placeholder="M, 32x30…"></div>' +
+    '<div class="row2"><div class="field"><label for="a-size">Talla (opcional)</label><input id="a-size" data-a="size" maxlength="30" value="' + esc(a.size) + '" placeholder="M, 32x30… o vacío"></div>' +
     '<div class="field"><label for="a-price">Precio (' + esc(settings.currency || "$") + ')</label><input id="a-price" data-a="price" type="number" min="0" step="1" inputmode="decimal" value="' + esc(a.price) + '"></div></div>' +
     '<div class="field"><label for="a-cond">Estado</label><select id="a-cond" data-a="cond">' + ["Con etiqueta","Como nuevo","Buen estado","Detalle leve"].map(function(o){ return "<option" + (a.cond === o ? " selected" : "") + ">" + o + "</option>"; }).join("") + "</select></div>" +
     (a.err ? '<div class="err">' + esc(a.err) + "</div>" : "") +
@@ -474,7 +502,7 @@ function vInventory(){
   return '<section class="panel"><div class="section-head" style="margin:0"><div><div class="eyebrow">Inventario</div><h3>Todas las prendas</h3></div>' +
     (samp ? '<button class="btn sm danger' + (armed === "samples" ? " armed" : "") + '" data-act="clearsamples">' + (armed === "samples" ? "¿Quitar " + samp + " muestras? Toca otra vez" : "Quitar prendas de muestra") + "</button>" : "") + "</div>" +
     '<div class="stats"><div class="stat"><b>' + tot + '</b><span>en catálogo</span></div><div class="stat"><b>' + (tot - sold) + '</b><span>disponibles</span></div><div class="stat"><b>' + sold + '</b><span>vendidas</span></div><div class="stat"><b>' + samp + "</b><span>de muestra</span></div></div>" +
-    '<div class="inv"><table><thead><tr><th></th><th>Prenda</th><th>Sección</th><th>Talla</th><th>Precio</th><th>Estado</th><th></th></tr></thead><tbody>' +
+    '<div class="inv"><table><thead><tr><th></th><th>Artículo</th><th>Sección</th><th>Talla</th><th>Precio</th><th>Estado</th><th></th></tr></thead><tbody>' +
     items.map(function(i){
       return '<tr><td><div class="line-item" style="display:block;padding:0;border:0"><div class="thumb" style="width:36px;height:45px">' + media(i, true) + "</div></div></td><td>" + esc(i.name) + "</td><td>" + secName(i.sec) + "</td><td>" + esc(i.size) + '</td><td class="price">' + money(i.price) + '</td><td><span class="st ' + (i.sold ? "no" : "ok") + '">' + (i.sold ? "Vendida" : "Disponible") + '</span></td><td style="white-space:nowrap"><button class="btn sm" data-act="sold" data-id="' + i.id + '">' + (i.sold ? "Disponible" : "Vendida") + '</button> <button class="btn sm" data-act="edit" data-id="' + i.id + '">Editar</button> ' + delBtn(i.id) + "</td></tr>";
     }).join("") + "</tbody></table></div></section>";
@@ -486,7 +514,7 @@ function vOrders(){
     var on = armed === "odel:" + o.id;
     return '<article class="order' + (o.status === "atendido" ? " done" : "") + '"><header><h3>' + esc(o.customer_name) + ' <span class="st ' + (o.status === "nuevo" ? "no" : "ok") + '">' + (o.status === "nuevo" ? "Nuevo" : "Atendido") + '</span></h3><span class="muted" style="font-size:.85rem">' + d.toLocaleString("es") + "</span></header>" +
       '<div style="font-size:.9rem">Tel: <b class="price">' + esc(o.phone) + "</b> · " + esc(o.delivery) + (o.address ? " — " + esc(o.address) : "") + "</div>" +
-      (o.items && o.items.length ? "<ul>" + o.items.map(function(i){ var cur = byId(i.id); return "<li>" + esc(i.name) + " · talla " + esc(i.size) + " · " + money(i.price) + (cur && cur.sold ? ' <span class="muted">(ya vendida)</span>' : "") + "</li>"; }).join("") + "</ul><div><b>Total: " + money(o.total) + "</b></div>" : "") +
+      (o.items && o.items.length ? "<ul>" + o.items.map(function(i){ var cur = byId(i.id); return "<li>" + esc(i.name) + (i.size ? " · talla " + esc(i.size) : "") + " · " + money(i.price) + (cur && cur.sold ? ' <span class="muted">(ya vendida)</span>' : "") + "</li>"; }).join("") + "</ul><div><b>Total: " + money(o.total) + "</b></div>" : "") +
       (o.wish ? "<div><b>Encargo:</b> " + esc(o.wish) + "</div>" : "") + (o.notes ? '<div class="muted">Notas: ' + esc(o.notes) + "</div>" : "") +
       '<div class="actions">' + (o.phone.replace(/\D/g, "").length >= 8 ? '<a class="btn sm dark" target="_blank" rel="noopener" href="https://wa.me/' + o.phone.replace(/\D/g, "") + '">Escribir por WhatsApp</a>' : "") +
       '<button class="btn sm" data-act="ostatus" data-id="' + o.id + '">' + (o.status === "nuevo" ? "Marcar atendido" : "Marcar nuevo") + "</button>" +
@@ -499,6 +527,13 @@ function vSettings(){
     '<div class="field"><label for="s-wa">Número de WhatsApp para pedidos (con código de país, sin +)</label><input id="s-wa" data-s="whatsapp" type="tel" value="' + esc(settings.whatsapp) + '" placeholder="Ej.: 50499998888"></div>' +
     '<div class="field"><label for="s-cur">Moneda</label><input id="s-cur" data-s="currency" maxlength="5" value="' + esc(settings.currency) + '" placeholder="$, L, Q…"></div>' +
     '<div class="field"><label for="s-link">Enlace para el QR (déjalo vacío para usar la dirección de esta página)</label><input id="s-link" data-s="link" value="' + esc(settings.link) + '" placeholder="' + esc(location.origin + location.pathname) + '"></div>' +
+    '<div class="field"><span class="lbl">Secciones del catálogo (las vacías no se muestran a los clientes)</span>' +
+    settings.sections.map(function(s){
+      var n = items.filter(function(i){ return i.sec === s.id; }).length;
+      return '<div class="secrow"><input id="sec-' + esc(s.id) + '" data-secname="' + esc(s.id) + '" maxlength="30" value="' + esc(s.name) + '" aria-label="Nombre de la sección" style="border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 10px;min-width:0"><span class="count">' + n + " art.</span>" +
+        '<button class="btn sm danger" data-act="secdel" data-v="' + esc(s.id) + '"' + (n ? ' disabled title="Primero mueve o elimina sus artículos"' : "") + ">Quitar</button></div>";
+    }).join("") +
+    '<div class="secrow"><input id="sec-new" placeholder="Nueva sección, ej.: Juguetes" maxlength="30" style="border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 10px;min-width:0"><span></span><button class="btn sm" data-act="secadd">Agregar</button></div></div>' +
     '<div class="actions"><button class="btn primary" data-act="savesettings"' + (busy ? " disabled" : "") + ">" + (busy ? "Guardando…" : "Guardar ajustes") + "</button></div></section>";
 }
 
@@ -524,9 +559,8 @@ app.addEventListener("click", function(e){
   if (act === "cart"){
     var k = cart.indexOf(id); if (k >= 0) cart.splice(k, 1); else cart.push(id);
     LS.set("jj.cart", cart); orderMsg = null; orderErr = "";
-    if (ui.tab === "catalogo"){ renderGrid(); var p = document.querySelector('nav.tabs [data-v="pedido"]'); if (p) p.innerHTML = "Hacer pedido" + (cartItems().length ? ' <span class="pill">' + cartItems().length + "</span>" : ""); }
-    else render();
-    return;
+    if (ui.tab === "catalogo") return toast(k >= 0 ? "Quitado del carrito" : "Agregado al carrito (" + cartItems().length + ")");
+    return render();
   }
   if (act === "order") return sendOrder();
   if (act === "neworder"){ orderMsg = null; orderSaved = false; return render(); }
@@ -559,9 +593,22 @@ app.addEventListener("click", function(e){
   }
   if (act === "canceledit"){ resetAdm(); return render(); }
   if (act === "additem") return saveItem();
+  if (act === "secadd"){
+    var inp = document.getElementById("sec-new"), nm = inp ? inp.value.trim() : "";
+    if (!nm) return toast("Escribe el nombre de la nueva sección.");
+    var slug = nm.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24) || "sec";
+    while (settings.sections.some(function(s){ return s.id === slug; })) slug += "-" + Math.random().toString(36).slice(2, 5);
+    settings.sections.push({ id: slug, name: nm.slice(0, 30) });
+    return toast("Sección agregada. Toca Guardar ajustes.");
+  }
+  if (act === "secdel"){
+    settings.sections = settings.sections.filter(function(s){ return s.id !== v; });
+    return toast("Sección quitada. Toca Guardar ajustes.");
+  }
   if (act === "savesettings"){
+    settings.sections = settings.sections.filter(function(s){ return s.name.trim(); });
     busy = true; render();
-    return q(sb.from("settings").update({ whatsapp: settings.whatsapp, currency: settings.currency || "$", link: settings.link }).eq("id", 1)).then(function(){ busy = false; toast("Ajustes guardados"); }, fail);
+    return q(sb.from("settings").update({ whatsapp: settings.whatsapp, currency: settings.currency || "$", link: settings.link, sections: settings.sections }).eq("id", 1)).then(function(){ busy = false; toast("Ajustes guardados"); }, fail);
   }
   if (act === "ostatus"){
     var o = orders.filter(function(x){ return x.id === id; })[0]; var ns = o.status === "nuevo" ? "atendido" : "nuevo";
@@ -582,6 +629,7 @@ app.addEventListener("input", function(e){
   if (t.dataset.d){ draft[t.dataset.d] = t.value; LS.set("jj.draft", draft); return; }
   if (t.dataset.a){ adm[t.dataset.a] = t.value; return; }
   if (t.dataset.s){ settings[t.dataset.s] = t.value.trim(); return; }
+  if (t.dataset.secname){ settings.sections.forEach(function(s){ if (s.id === t.dataset.secname) s.name = t.value; }); return; }
   if (t.id === "l-email") login.email = t.value;
 });
 app.addEventListener("change", function(e){
@@ -630,13 +678,12 @@ function saveItem(){
   var a = adm, editing = a.editing ? byId(a.editing) : null, price = Number(a.price);
   if (!a.name.trim()) a.err = "Escribe el nombre de la prenda.";
   else if (!a.cat.trim()) a.err = "Escribe la categoría.";
-  else if (!a.size.trim()) a.err = "Escribe la talla.";
   else if (a.price === "" || !(price >= 0)) a.err = "Escribe el precio.";
   else if (!editing && !a.blob) a.err = "Agrega una foto de la prenda.";
   else a.err = "";
   if (a.err) return render();
   busy = true; render();
-  var fields = { name: a.name.trim(), section: a.sec, category: a.cat.trim(), size: a.size.trim(), price: price, condition: a.cond };
+  var fields = { name: a.name.trim(), section: a.sec, category: a.cat.trim(), size: a.size.trim() || null, price: price, condition: a.cond };
   var upload = a.blob ? (function(){
     var path = (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)) + ".jpg";
     return q(sb.storage.from(BUCKET).upload(path, a.blob, { contentType: "image/jpeg", cacheControl: "31536000" })).then(function(){ return path; });

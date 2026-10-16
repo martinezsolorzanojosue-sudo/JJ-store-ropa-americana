@@ -115,6 +115,8 @@ ${rows}
 where not exists (select 1 from public.products);
 `;
 
+const extra = fs.readFileSync(path.join(root, 'supabase', '002-secciones.sql'), 'utf8').replace(/^--.*\r?\n/gm, '');
+const full = sql + '\n-- 6. Secciones libres y talla opcional ------------------------------------\n' + extra;
 fs.mkdirSync(path.join(root, 'supabase'), { recursive: true });
-fs.writeFileSync(path.join(root, 'supabase', 'setup.sql'), sql);
+fs.writeFileSync(path.join(root, 'supabase', 'setup.sql'), full);
 console.log('setup.sql listo,', state.items.length, 'prendas');

@@ -9,7 +9,6 @@ const cut = (a, b) => { const i = js.indexOf(a), j = js.indexOf(b, i); if (i < 0
 let shared = cut('/* ---------- Garment illustrations', '/* ---------- Render');
 shared = shared.replace('var src = tempUrls[it.img] || ("/_blob/" + it.img);', 'var src = imgUrl(it.img);');
 if (shared.includes('tempUrls')) throw new Error('media() sin adaptar');
-shared += cut('function card(it){', 'function cartItems()');
 let out = fs.readFileSync(path.join(__dirname, 'index.template.html'), 'utf8');
 out = out.replace('/*@CSS@*/', () => css.trim()).replace('/*@SHARED@*/', () => shared.trim());
 fs.writeFileSync(path.join(root, 'index.html'), out);
