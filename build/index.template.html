@@ -76,7 +76,7 @@ function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(
 function money(n){ var c = settings.currency || "$"; return c + (c.length > 1 ? " " : "") + Number(n || 0).toLocaleString("es", { maximumFractionDigits: 2 }); }
 function byId(id){ for (var i = 0; i < items.length; i++) if (items[i].id === id) return items[i]; return null; }
 function secName(s){ for (var i = 0; i < settings.sections.length; i++) if (settings.sections[i].id === s) return settings.sections[i].name; return s === "h" ? "Hombre" : s === "m" ? "Mujer" : "Otros"; }
-function isMeasure(s){ return /\d\s*(ml|oz|g|gr|kg|l|lb|cc)/i.test(s || ""); }
+function isMeasure(s){ return /[0-9] *(ml|oz|g|gr|kg|l|lb|cc)(?![a-z])/i.test(s || ""); }
 function waLink(text){ var n = waNumber(); return n ? "https://wa.me/" + n + "?text=" + encodeURIComponent(text) : ""; }
 var IC_CART = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.6 12.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.5L22 8H6"/></svg>';
 var IC_CHAT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 20.5l1.6-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg>';
